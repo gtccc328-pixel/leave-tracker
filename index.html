@@ -7,7 +7,7 @@
     <style>
         /* 溫和色調定義 */
         :root {
-            /* 3. 網頁底色改為很淡的粉紅色 */
+            /* 網頁底色改為很淡的粉紅色 */
             --color-bg: #fce9f1;         /* 很淡的粉紅色背景 */
             --color-container: #ffffff;  /* 白色容器 */
             --color-primary: #a78295;    /* 柔和的粉色主色調 */
@@ -35,7 +35,6 @@
             border-radius: 15px; 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); 
         }
-        /* 2. 主介面抬頭修改為 "事、病假記錄" */
         h1 { 
             font-size: 28px; 
             margin-bottom: 25px; 
@@ -80,7 +79,7 @@
         /* 歷史記錄表格樣式 */
         h2 { 
             margin-top: 30px; 
-            border-bottom: 2px solid var(--color-primary); /* 使用粉色主色調 */
+            border-bottom: 2px solid var(--color-primary); 
             padding-bottom: 5px; 
             color: var(--color-primary); 
             font-size: 22px;
@@ -97,7 +96,7 @@
             vertical-align: middle;
         }
         .history-table th { 
-            background-color: var(--color-secondary); /* 淡粉色表頭 */
+            background-color: var(--color-secondary); 
             font-weight: bold; 
             text-align: center;
         }
@@ -124,13 +123,18 @@
             width: 90%; max-width: 700px; 
             border-radius: 10px; text-align: left;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            gap: 20px; 
+            display: block; /* 使用區塊佈局 */
         }
+        
+        /* 讓左右區塊並排 */
+        .modal-content #leaveForm > div:first-child {
+            display: flex;
+            gap: 20px;
+        }
+        
         @media (max-width: 768px) {
-            .modal-content {
-                flex-direction: column; 
-                max-width: 450px;
+            .modal-content #leaveForm > div:first-child {
+                flex-direction: column; /* 小螢幕下垂直堆疊 */
             }
         }
         .modal-left, .modal-right {
@@ -142,7 +146,7 @@
         /* 輸入與選擇區塊 */
         .input-group { margin-bottom: 20px; }
         .step-buttons button { 
-            border: 2px solid var(--color-primary); /* 粉色邊框 */
+            border: 2px solid var(--color-primary); 
             background-color: #fcfcfc; 
         }
         .step-buttons button.selected { 
@@ -194,51 +198,54 @@
 
 <div id="recordModal" class="modal">
     <div class="modal-content">
-        <div class="modal-left">
-            <span class="close" onclick="closeRecordModal()">&times;</span>
-            <h3 id="modalTitle" style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0;">新增請假記錄</h3>
+        
+        <form id="leaveForm" style="width: 100%;">
+            <input type="hidden" id="recordIndex" value="-1">
+            <input type="hidden" id="selectedType" value="">
+            <input type="hidden" id="selectedHours" value="">
 
-            <form id="leaveForm">
-                <input type="hidden" id="recordIndex" value="-1">
+            <div>
+                <div class="modal-left">
+                    <span class="close" onclick="closeRecordModal()">&times;</span>
+                    <h3 id="modalTitle" style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0;">新增請假記錄</h3>
 
-                <div class="input-group">
-                    <h4 style="margin-top: 0;">1. 選擇假別：</h4>
-                    <div class="step-buttons">
-                        <button type="button" data-type="personal" onclick="selectLeaveType('personal', this)">事假</button>
-                        <button type="button" data-type="sick" onclick="selectLeaveType('sick', this)">病假</button>
+                    <div class="input-group">
+                        <h4 style="margin-top: 0;">1. 選擇假別：</h4>
+                        <div class="step-buttons">
+                            <button type="button" data-type="personal" onclick="selectLeaveType('personal', this)">事假</button>
+                            <button type="button" data-type="sick" onclick="selectLeaveType('sick', this)">病假</button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="input-group">
-                    <h4>2. 選擇時數：</h4>
-                    <div class="step-buttons" id="hoursOptions">
-                        <button type="button" data-hours="1" onclick="selectHours(1, this)">1 小時</button>
-                        <button type="button" data-hours="2" onclick="selectHours(2, this)">2 小時</button>
-                        <button type="button" data-hours="3" onclick="selectHours(3, this)">3 小時</button>
-                        <button type="button" data-hours="4" onclick="selectHours(4, this)">半日 (4h)</button>
-                        <button type="button" data-hours="8" onclick="selectHours(8, this)">全日 (8h)</button>
+                    <div class="input-group">
+                        <h4>2. 選擇時數：</h4>
+                        <div class="step-buttons" id="hoursOptions">
+                            <button type="button" data-hours="1" onclick="selectHours(1, this)">1 小時</button>
+                            <button type="button" data-hours="2" onclick="selectHours(2, this)">2 小時</button>
+                            <button type="button" data-hours="3" onclick="selectHours(3, this)">3 小時</button>
+                            <button type="button" data-hours="4" onclick="selectHours(4, this)">半日 (4h)</button>
+                            <button type="button" data-hours="8" onclick="selectHours(8, this)">全日 (8h)</button>
+                        </div>
                     </div>
                 </div>
                 
-                <input type="hidden" id="selectedType" value="">
-                <input type="hidden" id="selectedHours" value="">
+                <div class="modal-right">
+                    <div class="input-group">
+                        <h4>3. 請假日期：</h4>
+                        <label for="leaveDate" style="font-weight: normal; margin-top: 0;">請選擇或輸入日期</label>
+                        <input type="date" id="leaveDate" required style="width: 90%;"> 
+                    </div>
+                    
+                    <div class="input-group">
+                        <h4>4. 備註 (選填)：</h4>
+                        <textarea id="leaveNotes" rows="3" placeholder="例如：看醫生、私人事務..." style="width: 90%;"></textarea>
+                    </div>
+                </div>
+            </div>
 
-                <button type="button" onclick="submitLeaveRecord()" class="action-btn action-submit" style="width: 100%;">儲存記錄</button>
-            </form>
-        </div>
-        
-        <div class="modal-right">
-            <div class="input-group">
-                <h4>3. 請假日期：</h4>
-                <label for="leaveDate" style="font-weight: normal; margin-top: 0;">請選擇或輸入日期</label>
-                <input type="date" id="leaveDate" required style="width: 90%;"> 
-            </div>
-            
-            <div class="input-group">
-                <h4>4. 備註 (選填)：</h4>
-                <textarea id="leaveNotes" rows="3" placeholder="例如：看醫生、私人事務..." style="width: 90%;"></textarea>
-            </div>
-        </div>
+            <button type="button" onclick="submitLeaveRecord()" class="action-btn action-submit" style="width: 100%; font-size: 18px; margin-top: 25px;">儲存記錄</button>
+        </form>
+
     </div>
 </div>
 
