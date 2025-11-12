@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗓️ 事、病假記錄</title>
+    <style>
+        /* 溫和色調定義 */
+        :root {
+            /* 3. 網頁底色改為很淡的粉紅色 */
+            --color-bg: #fce9f1;         /* 很淡的粉紅色背景 */
+            --color-container: #ffffff;  /* 白色容器 */
+            --color-primary: #a78295;    /* 柔和的粉色主色調 */
+            --color-secondary: #f7e3eb;  /* 稍微深一點的淡粉 (表頭) */
+            --color-accent: #a9b9a6;     /* 淡綠色裝飾 */
+            --color-highlight: #4a7c59;  /* 深綠色強調 (記錄按鈕) */
+            --color-edit: #ffc107;       /* 修改 (黃色) */
+            --color-delete: #dc3545;     /* 刪除 (紅色) */
+        }
+
+        /* 基礎樣式 */
+        body { 
+            font-family: '微軟正黑體', 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            text-align: center; 
+            background-color: var(--color-bg); 
+            color: #333;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: var(--color-container); 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); 
+        }
+        /* 2. 主介面抬頭修改為 "事、病假記錄" */
+        h1 { 
+            font-size: 28px; 
+            margin-bottom: 25px; 
+            color: var(--color-primary);
+        }
+        
+        /* 放大剩餘假別顯示 */
+        .leave-display {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            padding: 20px 0;
+            border-bottom: 3px solid var(--color-secondary);
+        }
+        .leave-display p { 
+            font-size: 22px; 
+            color: var(--color-highlight); 
+            font-weight: bold;
+            margin: 0;
+        }
+
+        /* 記錄按鈕 (強調色) */
+        #recordButton, .action-btn { 
+            background-color: var(--color-highlight); 
+            color: white; 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background-color 0.3s, transform 0.1s; 
+        }
+        #recordButton { 
+            width: 100%; 
+            margin-top: 20px;
+        }
+        #recordButton:hover { 
+            background-color: #386145; 
+            transform: translateY(-1px);
+        }
+        
+        /* 歷史記錄表格樣式 */
+        h2 { 
+            margin-top: 30px; 
+            border-bottom: 2px solid var(--color-primary); /* 使用粉色主色調 */
+            padding-bottom: 5px; 
+            color: var(--color-primary); 
+            font-size: 22px;
+        }
+        .history-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            text-align: left; 
+        }
+        .history-table th, .history-table td { 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            vertical-align: middle;
+        }
+        .history-table th { 
+            background-color: var(--color-secondary); /* 淡粉色表頭 */
+            font-weight: bold; 
+            text-align: center;
+        }
+        .history-table td:last-child { 
+            text-align: center; 
+            min-width: 120px;
+        }
+        .history-table button { 
+            margin: 2px; 
+            padding: 6px 10px; 
+            font-size: 13px;
+            border-radius: 5px;
+        }
+
+        /* Modal (彈出視窗) 樣式 */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.6); 
+            padding-top: 40px; 
+        }
+        .modal-content {
+            background-color: var(--color-container); margin: 5% auto; padding: 25px; border: none;
+            width: 90%; max-width: 700px; 
+            border-radius: 10px; text-align: left;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 20px; 
+        }
+        @media (max-width: 768px) {
+            .modal-content {
+                flex-direction: column; 
+                max-width: 450px;
+            }
+        }
+        .modal-left, .modal-right {
+            flex: 1; 
+        }
+        .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; }
+        .close:hover, .close:focus { color: var(--color-primary); text-decoration: none; cursor: pointer; }
+
+        /* 輸入與選擇區塊 */
+        .input-group { margin-bottom: 20px; }
+        .step-buttons button { 
+            border: 2px solid var(--color-primary); /* 粉色邊框 */
+            background-color: #fcfcfc; 
+        }
+        .step-buttons button.selected { 
+            background-color: var(--color-primary); 
+            color: white; 
+            border-color: var(--color-primary); 
+        }
+        .action-submit {
+            background-color: var(--color-highlight); 
+        }
+        .action-submit:hover {
+            background-color: #386145;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗓️ 事、病假記錄</h1>
+    
+    <div class="leave-display">
+        <p id="personalLeaveDisplay">尚剩餘事假：載入中...</p>
+        <p id="sickLeaveDisplay">尚剩餘病假：載入中...</p>
+    </div>
+
+    <button id="recordButton" onclick="openRecordModal()">請假記錄 (新增/修改扣假)</button>
+
+    <h2>🧾 歷史請假記錄</h2>
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>編號</th>
+                <th>日期</th>
+                <th>假別</th>
+                <th>時數</th>
+                <th>備註</th>
+                <th>記錄的時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="historyTableBody">
+            </tbody>
+    </table>
+    
+    <p class="note" style="margin-top: 20px; color: #6c757d; font-size: 12px;">
+        所有記錄儲存在您的瀏覽器中 (localStorage)。
+    </p>
+</div>
+
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-left">
+            <span class="close" onclick="closeRecordModal()">&times;</span>
+            <h3 id="modalTitle" style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-top: 0;">新增請假記錄</h3>
+
+            <form id="leaveForm">
+                <input type="hidden" id="recordIndex" value="-1">
+
+                <div class="input-group">
+                    <h4 style="margin-top: 0;">1. 選擇假別：</h4>
+                    <div class="step-buttons">
+                        <button type="button" data-type="personal" onclick="selectLeaveType('personal', this)">事假</button>
+                        <button type="button" data-type="sick" onclick="selectLeaveType('sick', this)">病假</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <h4>2. 選擇時數：</h4>
+                    <div class="step-buttons" id="hoursOptions">
+                        <button type="button" data-hours="1" onclick="selectHours(1, this)">1 小時</button>
+                        <button type="button" data-hours="2" onclick="selectHours(2, this)">2 小時</button>
+                        <button type="button" data-hours="3" onclick="selectHours(3, this)">3 小時</button>
+                        <button type="button" data-hours="4" onclick="selectHours(4, this)">半日 (4h)</button>
+                        <button type="button" data-hours="8" onclick="selectHours(8, this)">全日 (8h)</button>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="selectedType" value="">
+                <input type="hidden" id="selectedHours" value="">
+
+                <button type="button" onclick="submitLeaveRecord()" class="action-btn action-submit" style="width: 100%;">儲存記錄</button>
+            </form>
+        </div>
+        
+        <div class="modal-right">
+            <div class="input-group">
+                <h4>3. 請假日期：</h4>
+                <label for="leaveDate" style="font-weight: normal; margin-top: 0;">請選擇或輸入日期</label>
+                <input type="date" id="leaveDate" required style="width: 90%;"> 
+            </div>
+            
+            <div class="input-group">
+                <h4>4. 備註 (選填)：</h4>
+                <textarea id="leaveNotes" rows="3" placeholder="例如：看醫生、私人事務..." style="width: 90%;"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- JavaScript 核心邏輯 ---
+    const DAILY_HOURS = 8;
+    const INITIAL_TOTAL_HOURS = 7 * DAILY_HOURS; 
+    const TOTALS_KEY = 'leaveTotals';
+    const RECORDS_KEY = 'leaveRecords';
+
+    let LEAVE_TOTALS = {};
+    let LEAVE_RECORDS = [];
+
+    // --- 資料處理與持久化 ---
+
+    function loadData() {
+        const storedTotals = localStorage.getItem(TOTALS_KEY);
+        LEAVE_TOTALS = storedTotals ? JSON.parse(storedTotals) : {
+            personal: INITIAL_TOTAL_HOURS,
+            sick: INITIAL_TOTAL_HOURS
+        };
+        
+        const storedRecords = localStorage.getItem(RECORDS_KEY);
+        try {
+            LEAVE_RECORDS = storedRecords ? JSON.parse(storedRecords) : [];
+        } catch (e) {
+            console.error("Failed to load leave records:", e);
+            LEAVE_RECORDS = []; 
+        }
+
+        if (typeof LEAVE_TOTALS.personal !== 'number') LEAVE_TOTALS.personal = INITIAL_TOTAL_HOURS;
+        if (typeof LEAVE_TOTALS.sick !== 'number') LEAVE_TOTALS.sick = INITIAL_TOTAL_HOURS;
+    }
+
+    function saveData() {
+        localStorage.setItem(TOTALS_KEY, JSON.stringify(LEAVE_TOTALS));
+        localStorage.setItem(RECORDS_KEY, JSON.stringify(LEAVE_RECORDS));
+    }
+
+    // --- 顯示更新與計算 ---
+
+    function formatHoursToDays(totalHours) {
+        if (totalHours < 0) totalHours = 0; 
+        const days = Math.floor(totalHours / DAILY_HOURS);
+        const hours = (totalHours % DAILY_HOURS).toFixed(1); 
+        return `${days} 日 ${hours} 小時`;
+    }
+    
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '無記錄時間';
+        const date = new Date(timestamp);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    function recalculateAndDisplay() {
+        LEAVE_TOTALS.personal = INITIAL_TOTAL_HOURS;
+        LEAVE_TOTALS.sick = INITIAL_TOTAL_HOURS;
+
+        LEAVE_RECORDS.forEach(record => {
+            if (record.type === 'personal') {
+                LEAVE_TOTALS.personal -= record.hours;
+            } else if (record.type === 'sick') {
+                LEAVE_TOTALS.sick -= record.hours;
+            }
+        });
+
+        document.getElementById('personalLeaveDisplay').innerText = 
+            `尚剩餘事假：${formatHoursToDays(LEAVE_TOTALS.personal)}`;
+        document.getElementById('sickLeaveDisplay').innerText = 
+            `尚剩餘病假：${formatHoursToDays(LEAVE_TOTALS.sick)}`;
+        
+        renderHistoryTable();
+        saveData();
+    }
+
+    function renderHistoryTable() {
+        const tableBody = document.getElementById('historyTableBody');
+        tableBody.innerHTML = ''; 
+
+        if (LEAVE_RECORDS.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666;">目前沒有請假記錄。</td></tr>';
+            return;
+        }
+
+        LEAVE_RECORDS.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+
+        LEAVE_RECORDS.forEach((record, index) => {
+            const row = tableBody.insertRow();
+            
+            row.insertCell().innerText = index + 1;
+            row.insertCell().innerText = record.date;
+            row.insertCell().innerText = record.type === 'personal' ? '事假' : '病假';
+            row.insertCell().innerText = `${record.hours} 小時`;
+            
+            const notesCell = row.insertCell();
+            notesCell.innerText = record.notes || '無'; 
+            notesCell.style.color = record.notes ? '#333' : '#aaa';
+            
+            row.insertCell().innerText = formatTimestamp(record.timestamp);
+
+            const actionCell = row.insertCell();
+            
+            const editButton = document.createElement('button');
+            editButton.innerText = '修改';
+            editButton.className = 'action-btn';
+            editButton.style.backgroundColor = 'var(--color-edit)'; 
+            editButton.style.color = '#333';
+            editButton.onclick = () => editLeaveRecord(index);
+            
+            const deleteButton = document.createElement('button');
+            deleteButton.innerText = '刪除';
+            deleteButton.style.backgroundColor = 'var(--color-delete)'; 
+            deleteButton.className = 'action-btn';
+            deleteButton.onclick = () => deleteLeaveRecord(index);
+
+            actionCell.appendChild(editButton);
+            actionCell.appendChild(deleteButton);
+        });
+    }
+
+    // --- Modal 介面控制與互動邏輯 ---
+    
+    const recordModal = document.getElementById('recordModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('leaveForm');
+    const leaveDateInput = document.getElementById('leaveDate');
+
+    function openRecordModal() {
+        form.reset();
+        document.getElementById('recordIndex').value = -1;
+        document.getElementById('selectedType').value = '';
+        document.getElementById('selectedHours').value = '';
+        document.getElementById('leaveNotes').value = ''; 
+        
+        leaveDateInput.value = new Date().toISOString().split('T')[0];
+
+        document.querySelectorAll('.step-buttons button').forEach(btn => btn.classList.remove('selected'));
+
+        modalTitle.innerText = "新增請假記錄";
+        recordModal.style.display = 'flex'; 
+    }
+
+    function closeRecordModal() {
+        recordModal.style.display = 'none';
+    }
+    
+    window.onclick = function(event) {
+        if (event.target == recordModal) {
+            closeRecordModal();
+        }
+    }
+
+    function selectLeaveType(type, button) {
+        document.getElementById('selectedType').value = type;
+        button.parentNode.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+    }
+
+    function selectHours(hours, button) {
+        document.getElementById('selectedHours').value = hours;
+        button.parentNode.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+    }
+
+    function submitLeaveRecord() {
+        const type = document.getElementById('selectedType').value;
+        const date = document.getElementById('leaveDate').value;
+        const hours = parseFloat(document.getElementById('selectedHours').value);
+        const notes = document.getElementById('leaveNotes').value.trim(); 
+        const index = parseInt(document.getElementById('recordIndex').value);
+        
+        if (!type || !date || !hours || hours <= 0) {
+            alert('請務必選擇假別、日期和時數！');
+            return;
+        }
+
+        const newRecord = {
+            date: date,
+            type: type, 
+            hours: hours,
+            notes: notes,
+            timestamp: index === -1 ? Date.now() : LEAVE_RECORDS[index].timestamp 
+        };
+        
+        if (index === -1) {
+            LEAVE_RECORDS.push(newRecord);
+            alert(`成功新增 ${type === 'personal' ? '事假' : '病假'} ${hours} 小時的記錄！`);
+        } else {
+            LEAVE_RECORDS[index].date = date;
+            LEAVE_RECORDS[index].type = type;
+            LEAVE_RECORDS[index].hours = hours;
+            LEAVE_RECORDS[index].notes = notes;
+            alert(`成功修改第 ${index + 1} 筆記錄！`);
+        }
+        
+        recalculateAndDisplay(); 
+        closeRecordModal();
+    }
+
+    // --- 歷史記錄操作 ---
+
+    function editLeaveRecord(index) {
+        const record = LEAVE_RECORDS[index];
+        if (!record) return;
+
+        modalTitle.innerText = "修改請假記錄";
+        document.getElementById('recordIndex').value = index; 
+
+        document.getElementById('selectedType').value = record.type;
+        document.getElementById('leaveDate').value = record.date;
+        document.getElementById('selectedHours').value = record.hours;
+        document.getElementById('leaveNotes').value = record.notes || ''; 
+
+        document.querySelectorAll('.step-buttons button').forEach(btn => {
+            btn.classList.remove('selected');
+            if (btn.getAttribute('data-type') === record.type) {
+                btn.classList.add('selected');
+            }
+            if (parseFloat(btn.getAttribute('data-hours')) === record.hours) {
+                btn.classList.add('selected');
+            }
+        });
+        
+        recordModal.style.display = 'flex'; 
+    }
+
+    function deleteLeaveRecord(index) {
+        if (confirm(`確定要刪除第 ${index + 1} 筆記錄 (${LEAVE_RECORDS[index].date}) 嗎？\n剩餘時數將會連動恢復。`)) {
+            LEAVE_RECORDS.splice(index, 1);
+            recalculateAndDisplay(); 
+            alert("記錄已刪除，剩餘時數已更新。");
+        }
+    }
+
+    // --- 程式啟動點 ---
+    window.onload = function() {
+        loadData();
+        recalculateAndDisplay(); 
+    }
+</script>
+</body>
+</html>
